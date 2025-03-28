@@ -2,6 +2,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Random;
 import java.util.Scanner;
@@ -148,7 +149,12 @@ public class KMeansClusterer {
 	 * @return the minimum Within-Clusters Sum-of-Squares measure
 	 */
 	public double getWCSS() {
-		// TODO - implement
+		double wcss = 0.0;
+        for (int i = 0; i < data.length; i++) {
+            int cluster = clusters[i];
+            wcss += Math.pow(getDistance(data[i], centroids[cluster]), 2);
+        }
+        return wcss;
 	}
 
 	/**
@@ -156,14 +162,56 @@ public class KMeansClusterer {
 	 * @return whether or not any cluster assignments changed
 	 */
 	public boolean assignNewClusters() {
-		// TODO - implement
+		boolean changed = false;
+
+        for (int i = 0; i < data.length; i++) {
+            int closest = 0;
+            double minDist = getDistance(data[i], centroids[0]);
+
+
+            for (int j = 1; j < centroids.length; j++) {
+                double dist = getDistance(data[i], centroids[j]);
+                if (dist < minDist) {
+                    minDist = dist;
+                    closest = j;
+                }
+            }
+
+            if (clusters[i] != closest) {
+                clusters[i] = closest;
+                changed = true;
+            }
+        }
+        return changed;
 	}
 	
 	/**
 	 * Compute new centroids at the mean point of each cluster of points.
 	 */
 	public void computeNewCentroids() {
-		// TODO - implement
+		int[] counts = new int[k]; // number of points in each cluster
+        double[][] newCentroids = new double[k][data[0].length];
+
+        for (int i = 0; i < data.length; i++) {
+            int cluster = clusters[i];
+            counts[cluster]++;
+            for (int j = 0; j < data[i].length; j++) {
+                newCentroids[cluster][j] += data[i][j];
+            }
+        }
+
+		// Compute mean for each cluster
+        for (int i = 0; i < k; i++) {
+            if (counts[i] > 0) {
+                for (int j = 0; j < newCentroids[i].length; j++) {
+                    newCentroids[i][j] /= counts[i];
+                }
+            } else {
+                newCentroids[i] = centroids[i];
+            }
+        }
+		// If a cluster has no assigned points, retain the old centroid
+        centroids = newCentroids;
 	}
 
 	
@@ -173,7 +221,26 @@ public class KMeansClusterer {
 	 * If kMin &lt; kMax, select the k maximizing the gap statistic using 100 uniform samples uniformly across given data ranges.
 	 */
 	public void kMeansCluster() {
-		// TODO - implement
+		clusters = new int[data.length];
+		centroids = new double[k][data[0].length];
+
+		// Forgy initialization: randomly select initial centroids from data
+        for (int i = 0; i < k; i++) {
+            int randomIndex = random.nextInt(data.length);
+            centroids[i] = Arrays.copyOf(data[randomIndex], data[randomIndex].length);
+        }
+
+		boolean changed;
+        int iterations = 0;
+
+		// Iterate until convergence (no changes in cluster assignment) or max iterations
+        do {
+            changed = assignNewClusters();
+            computeNewCentroids(); 
+            iterations++;
+			
+        } while (changed && iterations < 100);
+
 	}
 	
 	/**
