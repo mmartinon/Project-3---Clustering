@@ -240,6 +240,7 @@ public class KMeansClusterer {
             iterations++;
 			
         } while (changed && iterations < 100);
+		System.out.println("WCSS: " + getWCSS());
 
 	}
 	
